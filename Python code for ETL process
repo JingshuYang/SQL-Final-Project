@@ -1,0 +1,485 @@
+import pandas as pd
+
+import os
+os.getcwd()
+
+users_public=pd.read_csv("6M-0K-99K.users.dataset.public.csv")
+buyers_country=pd.read_csv("buyers_repartition_by_country.csv")
+sellers_country=pd.read_csv("comparison_of_sellers_by_gender_and_country.csv")
+top_sellers_fashion_c2c=pd.read_csv("countries_with_top_sellers_fashion_c2c.csv")
+
+user=users_public
+user=user.reset_index()
+rename = {'index':'user_id'}              
+user.rename(columns = {'index':'user_id'},inplace=True)
+user['topSellerYN']=0
+user.loc[ (user["productsSold"]>20) , 'topSellerYN' ] = "Y"
+user.loc[ (user["productsSold"]<=20) , 'topSellerYN' ] = "N"
+user['appType']=0
+user.loc[(user["hasAndroidApp"]==True) , 'appType' ] = "android"
+user.loc[ (user["hasIosApp"]==True) , 'appType' ] = "ios"
+user.loc[ (user["hasAnyApp"]==False) , 'appType' ] = "no app"
+Selectcol = ['user_id','gender','countryCode','language','civilityTitle']
+users_basic_information=user[list(Selectcol)] # table2
+users_basic_information.to_csv('users_basic_information.csv',encoding='utf-8')
+countryCode_Country0=user[['countryCode','country']]
+countryCode_Country=countryCode_Country0.drop_duplicates() # table1
+countryCode_Country=countryCode_Country.reset_index()
+rename = {'index':'country_id'}  
+countryCode_Country.rename(columns = {'index':'country_id'},inplace=True)
+countryCode_Country.to_csv('countryCode_Country.csv',encoding='utf-8')
+Users_Social_Account=user[['user_id','socialNbFollowers','socialNbFollows' ,'hasProfilePicture']] #table3
+Users_Social_Account.to_csv('Users_Social_Account.csv',encoding='utf-8')
+
+Users_Apptype=user[['user_id','hasAnyApp','appType']] ## table4
+Users_Apptype.to_csv('Users_Apptype.csv',encoding='utf-8')
+Users_Sales=user[['user_id','topSellerYN','productsListed','productsSold','productsPassRate']] ## table5
+Users_Sales.to_csv('Users_Sales.csv',encoding='utf-8')
+Users_Purchases=user[['user_id','socialProductsLiked','productsWished','productsBought'
+                      ]] ## table6
+Users_Purchases.to_csv('Users_Purchases.csv',encoding='utf-8')                     
+Seniority=user[['user_id','seniority','seniorityAsMonths','daysSinceLastLogin' ]] 
+Seniority.loc[ (Seniority["daysSinceLastLogin"]>1000) , 'daysSinceLastLogin' ] = ""
+
+
+
+Seniority.rename(columns={'user_id':'user_id','seniority':'seniorityDays','seniorityAsMonths':'seniorityMonths','daysSinceLastLogin':'daysSinceLastLogin'},inplace=True) ## table7 
+
+Seniority.to_csv('Seniority.csv',encoding='utf-8')
+buyers_country_data=pd.merge(buyers_country, countryCode_Country, left_on='country', right_on='country', how='inner') 
+sellers_country_data=pd.merge(sellers_country, countryCode_Country, left_on='country', right_on='country', how='inner') 
+ 
+Country_Buyers=buyers_country_data[['country_id','buyers','topbuyers','totalproductsbought']] ## table8
+Country_Buyers.to_csv('Country_Buyers.csv',encoding='utf-8')
+
+Country_Sellers=sellers_country_data[['country_id','sex''nbsellers','meansellerpassrate','totalproductssold'
+                                      ,'totalproductslisted']] ## table9
+Country_Sellers=Country_Sellers.reset_index()                                      
+Country_Sellers.rename(columns = {'nbsellers':'sellers','meansellerpassrate':'meanSellerPassRate',
+                                  'totalproductssold':'totalProductsSold',
+                                  'totalproductslisted':'totalProductsListed'},inplace=True) ## table9
+Country_Sellers.to_csv('Country_Sellers.csv',encoding='utf-8')                            
+Country_Social_Account=sellers_country_data[['country_id','sex','meanfollowers','meanfollows']] ## table10 
+Country_Social_Account=Country_Social_Account.reset_index()    
+Country_Social_Account.rename(columns = {'country_id':'country_id','meanfollowers':'meanFollowers','meanfollows':'meanFollowing'},inplace=True) ## table10
+Country_Social_Account.to_csv('Country_Social_Account.csv',encoding='utf-8') 
+top_sellers_fashion_c2c_data=pd.merge(top_sellers_fashion_c2c, countryCode_Country, left_on='country', right_on='country', how='inner') 
+#Country_Topsellers_Social_Media_data=pd.merge(Country_Topsellers_Social_Media, countryCode_Country, left_on='country', right_on='country', how='inner') 
+
+Country_Topsellers=top_sellers_fashion_c2c_data[['country_id','topsellers','topsellerratio','toptotalproductssold'
+                                            ,'toptotalproductslisted','totalproductslisted']]## table11 
+Country_Topsellers=Country_Topsellers.reset_index()                                              
+Country_Topsellers.rename(columns = {'country_id':'country_id', 'topsellers':'topSellers',
+                                     'topsellerratio':'topSellerRatio',
+                                     'toptotalproductssold':'topTotalProductsSold',
+                                     'toptotalproductslisted':'topTotalProductsListed',
+                                     'totalproductslisted':'topTotalProductsListed'
+                           },inplace=True) ## table11                                       
+Country_Topsellers.to_csv('Country_Topsellers.csv',encoding='utf-8')
+Country_Topsellers_Social_Media= top_sellers_fashion_c2c_data[['country_id',
+                                                          'meanofflinedays',
+                                                          'topmeanofflinedays',
+                                                          'topmeanfollowers',
+                                                          'topmeanfollowing']] ## table12
+Country_Topsellers_Social_Media.to_csv('Country_Topsellers_Social_Media.csv',encoding='utf-8')  
+                                                        
+Conversion_Buyer_Wishlist_Likes= buyers_country_data[['country_id',
+                                                      'boughtperwishlistratio',
+                                                      'boughtperlikeratio',
+                                                      'totalproductswished',
+                                                       'totalproductsliked']] ## table13 
+Conversion_Buyer_Wishlist_Likes.to_csv('Conversion_Buyer_Wishlist_Likes.csv',encoding='utf-8')                                                     
+sellers_country_top=pd.merge(buyers_country_data, top_sellers_fashion_c2c, left_on='country', right_on='country', how='left') 
+sellers_country_top_data=pd.merge(sellers_country_top, countryCode_Country, left_on='country', right_on='country', how='left') 
+
+
+Country_Female_Users= sellers_country_top_data[['country_id','femalebuyers','topfemalebuyers',
+                                           'femalebuyersratio',
+                                           'femalesellers','topfemalesellers']] #table14
+Country_Female_Users.to_csv('Country_Female_Users.csv',encoding='utf-8')                                          
+Country_Male_Users_base= sellers_country_top_data[['country_id','malebuyers',
+                                              'topmalebuyers',
+                                              'femalebuyersratio',
+                                              'malesellers','topmalesellers']] #table14   
+Country_Male_Users_base['total_rate']=100
+Country_Male_Users_base['maleBuyersRatio']=Country_Male_Users_base['total_rate']-Country_Male_Users_base['femalebuyersratio'] 
+Country_Male_Users=Country_Male_Users_base[['country_id_y','malebuyers',
+                                            'topmalebuyers',
+                                            'maleBuyersRatio', 'malesellers','topmalesellers']] #table15
+Country_Male_Users.to_csv('Country_Male_Users.csv',encoding='utf-8')
+   
+import pandas as pd
+from sqlalchemy import create_engine
+import psycopg2, os
+
+print('Connecting to the PostgreSQL database...')
+conn = psycopg2.connect(
+    host="localhost",
+    port='5432',
+    database="project",
+    user="postgres",
+    password="123")
+   
+cur = conn.cursor()
+createCountryCode= """ CREATE TABLE countryCode_Country (
+                    country_id   int,
+                    countryCode  varchar(2), 
+                    country    varchar(50) UNIQUE NOT NULL,
+                    PRIMARY KEY (country_id)
+)"""
+cur.execute(createCountryCode)
+conn.commit()
+df = pd.read_csv('countryCode_Country.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO countryCode_Country (country_id,countryCode, country)
+                VALUES (%s,%s,%s)
+                """,
+                (row.country_id,
+                 row.countryCode, 
+                row.country)
+                )
+conn.commit()
+###civilitytitle: mr. mrs, miss
+createUserinfo= """ CREATE TABLE Users_Basic_Information (
+	user_id    serial, 
+	gender	char(1) CHECK (gender in ('F', 'M')),  
+    country_id   int,
+	language    char(2) CHECK (language in ('de', 'en', 'es', 'fr', 'it')), 
+	civilityTitle		varchar(4) CHECK (civilityTitle in ('mr', 'mrs', 'miss')),  
+	PRIMARY KEY (user_id),
+	FOREIGN KEY (country_id) REFERENCES countryCode_Country
+)"""
+cur.execute(createUserinfo)
+conn.commit()
+df = pd.read_csv('users_basic_information.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Users_Basic_information (user_id,gender, country_id,language,civilityTitle)
+                VALUES (%s,%s,%s,%s,%s)
+                """,
+                (row.user_id,
+                 row.gender, 
+                row.country_id,
+                row.language,
+                row.civilityTitle)
+                )
+conn.commit()
+createsocialaccount= """ CREATE TABLE Users_Social_Account (
+	user_id  serial, 
+	socialNbFollowers    int,
+	socialNbFollows	int, 
+	hasProfilePicture    varchar(5),
+	PRIMARY KEY (user_id),
+	FOREIGN KEY (user_id) REFERENCES Users_Basic_Information
+)"""
+cur.execute(createsocialaccount)
+conn.commit()
+df = pd.read_csv('Users_Social_Account.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Users_Social_Account (user_id,socialNbFollowers, socialNbFollows,hasProfilePicture)
+                VALUES (%s,%s,%s,%s)
+                """,
+                (row.user_id,
+                 row.socialNbFollowers, 
+                row.socialNbFollows,
+                row.hasProfilePicture
+                )
+                )
+conn.commit()
+###add no app for apptype
+createapptype= """ CREATE TABLE Users_Apptype (
+	user_id  serial, 
+	hasAnyApp    varchar(5) CHECK (hasAnyApp in ('false', 'true')),
+	appType	  varchar(7) CHECK (appType in ('android', 'ios','no app')), 
+	PRIMARY KEY (user_id),
+	FOREIGN KEY (user_id) REFERENCES Users_Basic_Information
+)"""
+cur.execute(createapptype)
+conn.commit()
+df = pd.read_csv('Users_Apptype.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Users_Apptype (user_id,hasAnyApp, appType)
+                VALUES (%s,%s,%s)
+                """,
+                (row.user_id,
+                 row.hasAnyApp, 
+                row.appType
+                )
+                )
+conn.commit()
+createusersales= """ CREATE TABLE Users_Sales (
+	user_id  serial, 
+	topSellerYN		char(1) CHECK (topSellerYN in ('Y', 'N')),
+	productsListed    int,
+	productsSold    int,
+	productsPassRate	numeric CHECK (productsPassRate <= 100),
+	PRIMARY KEY (user_id),
+	FOREIGN KEY (user_id) REFERENCES Users_Basic_Information
+)"""
+cur.execute(createusersales)
+conn.commit()
+df = pd.read_csv('Users_Sales.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Users_Sales (user_id,topSellerYN, productsListed,productsSold,productsPassRate)
+                VALUES (%s,%s,%s,%s,%s)
+                """,
+                (row.user_id,
+                 row.topSellerYN, 
+                row.productsListed,
+                 row.productsSold,
+                 row.productsPassRate
+                )
+                )
+conn.commit()
+createuserpurchases= """ CREATE TABLE Users_Purchases (
+	user_id  serial, 
+	socialProductsLiked    int,
+	productsWishes    int,
+	productsBought    int,
+	PRIMARY KEY (user_id),
+	FOREIGN KEY (user_id) REFERENCES Users_Basic_Information
+)"""
+cur.execute(createuserpurchases)
+conn.commit()
+df = pd.read_csv('Users_Purchases.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Users_Purchases (user_id,socialProductsLiked , productsWishes,productsBought)
+                VALUES (%s,%s,%s,%s)
+                """,
+                (row.user_id,
+                 row.socialProductsLiked , 
+                row. productsWished,
+                 row.productsBought
+                )
+                )
+conn.commit()
+createseniority= """ CREATE TABLE Seniority (
+	user_id  serial, 
+	seniorityDays    int,
+	seniorityMonths    numeric(5,2),
+	daysSinceLastLogin	numeric,
+	PRIMARY KEY (user_id),
+	FOREIGN KEY (user_id) REFERENCES Users_Basic_Information
+)"""
+cur.execute(createseniority)
+conn.commit()
+df = pd.read_csv('Seniority.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Seniority (user_id,seniorityDays , seniorityMonths,daysSinceLastLogin)
+                VALUES (%s,%s,%s,%s)
+                """,
+                (row.user_id,
+                 row.seniorityDays , 
+                row. seniorityMonths,
+                 row.daysSinceLastLogin
+                )
+                )
+conn.commit()
+createcountrybuyers= """CREATE TABLE Country_Buyers (
+	country_id    int, 
+	buyers	int,
+	topBuyers  int, 
+	totalProductsBought    int, 
+	PRIMARY KEY (country_id),
+	FOREIGN KEY (country_id) REFERENCES countryCode_Country
+)"""
+cur.execute(createcountrybuyers)
+conn.commit()
+df = pd.read_csv('Country_Buyers.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Country_Buyers (country_id,buyers , topBuyers,totalProductsBought)
+                VALUES (%s,%s,%s,%s)
+                """,
+                (row.country_id,
+                 row.buyers , 
+                row. topbuyers,
+                 row.totalproductsbought
+                )
+                )
+conn.commit()
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Country_Buyers (country_id,buyers , topBuyers,totalProductsBought)
+                VALUES (%s,%s,%s,%s)
+                """,
+                (row.country_id,
+                 row.buyers , 
+                row. topbuyers,
+                 row.totalproductsbought
+                )
+                )
+conn.commit()
+df = pd.read_csv('Country_Sellers.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Country_Sellers(country_id,sex, sellers,meanSellerPassRate,totalProductsSold,totalProductsListed )
+                VALUES (%s,%s,%s,%s,%s,%s)
+                """,
+                (row.country_id,
+                 row.sex,
+                 row.sellers, 
+                row. meanSellerPassRate,
+                 row.totalProductsSold,
+                 row.totalProductsListed 
+                )
+                )
+conn.commit()
+createcountrysocialaccount= """CREATE TABLE Country_Social_Account (
+	country_id    int, 
+    sex           varchar(7),
+	meanFollowers  numeric, 
+	meanFollowing    numeric, 
+	PRIMARY KEY (country_id,sex),
+	FOREIGN KEY (country_id) REFERENCES countryCode_Country
+)"""
+cur.execute(createcountrysocialaccount)
+conn.commit()
+df = pd.read_csv('Country_Social_Account.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Country_Social_Account(country_id,sex, meanFollowers,meanFollowing )
+                VALUES (%s,%s,%s,%s)
+                """,
+                (row.country_id,
+                 row.sex,
+                 row.meanFollowers, 
+                row. meanFollowing,
+                )
+                )
+conn.commit()
+createcountrytopseller= """CREATE TABLE Country_Topsellers (
+	country_id    int, 
+	topSellers  int, 
+	topSellerRatio    numeric,
+	topTotalProductsSold	int,
+	topTotalProductsListed	int,
+	PRIMARY KEY (country_id),
+	FOREIGN KEY (country_id) REFERENCES countryCode_Country
+)"""
+cur.execute(createcountrytopseller)
+conn.commit()
+df = pd.read_csv('Country_Topsellers.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Country_Topsellers(country_id,topSellers,topSellerRatio,topTotalProductsSold,topTotalProductsListed )
+                VALUES (%s,%s,%s,%s,%s)
+                """,
+                (row.country_id,
+                 row.topSellers, 
+                row. topSellerRatio,
+                 row.topTotalProductsSold,
+                 row.topTotalProductsListed
+                )
+                )
+conn.commit()
+createcountrytopsellersm= """CREATE TABLE Country_Topsellers_Social_Media (
+	country_id    int, 
+	meanOfflineDays  numeric, 
+	topMeanOfflineDays    numeric,
+	topMeanFollowers	numeric,
+	topMeanFollowing	numeric, 
+	PRIMARY KEY (country_id),
+	FOREIGN KEY (country_id) REFERENCES countryCode_Country
+)"""
+cur.execute(createcountrytopsellersm)
+conn.commit()
+df = pd.read_csv('Country_Topsellers_Social_Media.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Country_Topsellers_Social_Media(country_id,meanOfflineDays,topMeanOfflineDays,topMeanFollowers,topMeanFollowing )
+                VALUES (%s,%s,%s,%s,%s)
+                """,
+                (row.country_id,
+                 row.meanofflinedays, 
+                row. topmeanofflinedays,
+                 row.topmeanfollowers,
+                 row.topmeanfollowing
+                )
+                )
+conn.commit()
+createconversion= """CREATE TABLE Conversion_Buyer_Wishlist_Likes (
+	country_id    int, 
+	boughtPerWishlistRatio  numeric,
+	boughtPerLikeRatio  numeric, 
+	TotalProductsWished   numeric,
+	TotalProductsLiked	numeric,
+	PRIMARY KEY (country_id),
+	FOREIGN KEY (country_id) REFERENCES countryCode_Country
+)"""
+cur.execute(createconversion)
+conn.commit()
+df = pd.read_csv('Conversion_Buyer_Wishlist_Likes.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Conversion_Buyer_Wishlist_Likes(country_id,boughtPerWishlistRatio,boughtPerLikeRatio,TotalProductsWished,TotalProductsLiked )
+                VALUES (%s,%s,%s,%s,%s)
+                """,
+                (row.country_id,
+                 row.boughtperwishlistratio, 
+                row. boughtperlikeratio,
+                 row.totalproductswished,
+                 row.totalproductsliked
+                )
+                )
+conn.commit()
+createfemaleuser= """CREATE TABLE Country_Female_Users (
+	country_id    int, 
+	femaleBuyers  int,
+	topFemaleBuyers  int, 
+	femaleBuyersRatio  numeric,
+	femaleSellers  numeric, 
+	topFemaleSellers    numeric,
+	PRIMARY KEY (country_id),
+	FOREIGN KEY (country_id) REFERENCES countryCode_Country
+)"""
+cur.execute(createfemaleuser)
+conn.commit()
+df = pd.read_csv('Country_Female_Users.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Country_Female_Users(country_id,femaleBuyers,topFemaleBuyers,femaleBuyersRatio ,femaleSellers,topFemaleSellers  )
+                VALUES (%s,%s,%s,%s,%s,%s)
+                """,
+                (row.country_id,
+                 row.femalebuyers, 
+                row. topfemalebuyers,
+                 row.femalebuyersratio,
+                 row.femalesellers,
+                 row.topfemalesellers 
+                )
+                )
+conn.commit()
+createmaleuser= """CREATE TABLE Country_Male_Users (
+	country_id    int, 
+	maleBuyers  int,
+	topMaleBuyers  int, 
+	maleBuyersRatio  numeric,
+	maleSellers  numeric, 
+	topMaleSellers    numeric,
+	PRIMARY KEY (country_id),
+	FOREIGN KEY (country_id) REFERENCES countryCode_Country
+)"""
+cur.execute(createmaleuser)
+conn.commit()
+df = pd.read_csv('Country_Male_Users.csv',encoding='utf-8')
+for row in df.itertuples():
+    cur.execute("""
+                INSERT INTO Country_Male_Users(country_id,maleBuyers,topMaleBuyers,MaleBuyersRatio ,MaleSellers,topMaleSellers  )
+                VALUES (%s,%s,%s,%s,%s,%s)
+                """,
+                (row.country_id,
+                 row.malebuyers, 
+                row. topmalebuyers,
+                 row.maleBuyersRatio,
+                 row.malesellers,
+                 row.topmalesellers 
+                )
+                )
+conn.commit()
